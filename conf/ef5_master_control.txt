@@ -1,0 +1,272 @@
+
+# ==============================================================================
+# EF5 MASTER TEMPLATE CONTROL FILE
+# ==============================================================================
+# Designed for the "EF5 Dynamic Dockerization" workflow.
+# Rename this file to 'control.txt' and place it in the ./conf directory.
+# This template outlines the standard simulation (simu) mode blocks in the order
+# they appear in the manual.
+# ==============================================================================
+
+# ==============================================================================
+# BASIC BLOCK
+# ==============================================================================
+# Defines the core domain and geographic projection details.
+[Basic MySimu]
+DEM=/data/basic/your_DEM.tif
+DDM=/data/basic/your_DDM.tif
+FAM=/data/basic/your_FAM.tif
+PROJ=geographic
+ESRIDDM=true
+SELFFAM=false
+
+# ==============================================================================
+# PRECIP FORCING BLOCK
+# ==============================================================================
+# Defines the precipitation inputs.
+# In the Docker container, ensure these paths point to the read-write /data
+# directory mapped from your host machine.
+[PrecipForcing MyPrecip]
+Type=BIF
+UNIT=mm/h
+FREQ=10u
+LOC=/data/precip/
+NAME=Q2_YYYYMMDDUU.bif
+
+# ==============================================================================
+# TEMP FORCING BLOCK
+# ==============================================================================
+# Defines the Temperature inputs. 
+# Strictly required if you are using the Snow17 model to simulate snow accumulation/melt.
+# These paths must also point to the /data mount within the container.
+#[TempForcing MyTemp]
+#Type=TIF
+#UNIT=C
+#FREQ=1h
+#LOC=/data/temp/
+#NAME=temp_YYYYMMDDHH.tif
+
+# ==============================================================================
+# PET FORCING BLOCK
+# ==============================================================================
+# Defines the Potential Evapotranspiration (PET) inputs.
+# These paths must also point to the /data mount within the container.
+[PETForcing PETclimo]
+LOC=/data/pet/
+FREQ=1mo
+UNIT=mm/d
+NAME=PET_MM.tif
+TYPE=TIF
+
+# ==============================================================================
+# GAUGE BLOCK
+# ==============================================================================
+# Defines observation gauges for flow comparison or calibration. A gauge block is made for each 
+# individual gauge you wish to model. Alternatively to using lat/lon, you can use the grid definition
+# locations celly/cellx
+[Gauge USGS-08104900]
+Lat=30.62575
+Lon=-97.69112
+obs=/data/observations/usgs/USGS-08104900.csv
+#basinarea=344          #drainage area in km^2
+#outputts=False         #output a time series of discharge
+#wantda=False           #if we are doing data assimilation are we using this gauge?
+#wantco=False           #will this gauge be included in a combined output file?
+
+# You can also lay out your gauge blocks horizontally to save space for dense gauge networks! Example:
+[Gauge USGS-08104900] Lat=30.62575 Lon=-97.69112 obs=/data/observations/usgs/USGS-08104900.csv
+
+# ==============================================================================
+# BASIN BLOCK
+# ==============================================================================
+# Combine your gauges into distinct basins.
+[Basin UpperSanGab]
+gauge=USGS-08104900
+
+# ==============================================================================
+# PARAMSET BLOCK
+# ==============================================================================
+# EF5 incorporates 3 primary water balance models including CREST, SAC-SMA, and HP.
+# These water balance models can be coupled with either linear reservoir or kinematic wave routing.
+# You can use gridded parameter sets by adding '_grid' to the parameter name and providing a file location
+# and/or you can supply parameters designated by gauge locations you specified above.
+# Uncomment and configure the model option you intend to use.
+
+# ========================================
+# WATER BALANCE OPTIONS
+# ========================================
+
+# --- 1: CREST ---
+# Coupled Routing and Excess Storage model.
+#[CrestParamSet MyCREST]
+#wm_grid=/data/parameters/CREST/wm_TX.tif
+#im_grid=/data/parameters/CREST/im_TX.tif
+#fc_grid=/data/parameters/CREST/ksat_TX.tif
+#b_grid=/data/parameters/CREST/b_TX.tif
+#gauge=USGS-08104900
+#wm=1.0
+#b=1.0
+#im=0.01
+#ke=1.0
+#fc=1.00
+#iwu=75.0
+
+# --- 2: SAC (SAC-SMA) ---
+# Sacramento Soil Moisture Accounting Model.
+#[SacParamSet MySACSMA]
+#uztwm_grid=/data/parameters/SACSMA/uztwm_TX.tif
+#uzfwm_grid=/data/parameters/SACSMA/uzfwm_TX.tif
+#uzk_grid=/data/parameters/SACSMA/uzk_TX.tif
+#zperc_grid=/data/parameters/SACSMA/zperc_TX.tif
+#rexp_grid=/data/parameters/SACSMA/rexp_TX.tif
+#lztwm_grid=/data/parameters/SACSMA/lztwm_TX.tif
+#lzfsm_grid=/data/parameters/SACSMA/lzfsm_TX.tif
+#lzfpm_grid=/data/parameters/SACSMA/lzfpm_TX.tif
+#lzsk_grid=/data/parameters/SACSMA/lzsk_TX.tif
+#lzpk_grid=/data/parameters/SACSMA/lzpk_TX.tif
+#pfree_grid=/data/parameters/SACSMA/pfree_TX.tif
+#gauge=USGS-08104900
+#uztwm=1.0
+#uzfwm=1.0
+#uzk=1.0
+#pctim=0.101
+#adimp=0.10
+#riva=1.001
+#zperc=1.0
+#rexp=1.0
+#lztwm=1.0
+#lzfsm=1.0
+#lzfpm=1.0
+#lzsk=1.0
+#lzpk=1.0
+#pfree=1.0
+#side=0.0
+#rserv=0.3
+#admic=1.0
+#uztwc=0.55
+#uzfwc=0.14
+#lztwc=0.56
+#lzfsc=0.11
+#lzfpc=0.46
+
+# --- 3: HP ---
+# Hydrophobic model for urban or highly impermeable routing.
+# The HP model utilizes only two core parameters, both of which are strictly bounded
+# between 0.0 and 1.0 by the model's initialization logic.
+# These can be supplied as distributed grids or as uniform scalars.
+#[HPParamSet MyHP]
+#precip_grid=/data/parameters/HP/precip_TX.tif
+#split_grid=/data/parameters/HP/split_TX.tif
+#gauge=USGS-08104900
+# precip=1.0    # Precipitation multiplier (scales incoming rainfall).
+# split=1.0     # Split fraction (1.0 = 100% of precip becomes fast/overland flow)
+
+# ========================================
+# ROUTING OPTIONS
+# ========================================
+
+# --- 1: KW ---
+#[KWParamSet MyKW]
+#under_grid=/data/parameters/KW/ksat_TX.tif
+#leaki_grid=/data/parameters/KW/leaki_TX.tif
+#alpha_grid=/data/parameters/KW/alpha_TX.tif
+#beta_grid=/data/parameters/KW/beta_TX.tif
+#alpha0_grid=/data/parameters/KW/alpha0_TX.tif
+#gauge=USGS-08104900
+#alpha0=1.0
+#alpha=1.0
+#beta=1.0
+#under=0.0001
+#leaki=1.0
+#th=10.0
+#isu=00.0
+
+# --- 2: LR ---
+#[LRparamset MyLR]
+#gauge=USGS-08104900
+#coem=1611.115479
+#river=307.980042
+#under=2531.556641
+#leako=0.918236
+#leaki=0.017568
+#th=8.140809
+#iso=0.000040
+#isu=0.000073
+
+# ========================================
+# OPTIONAL ADDITIONS
+# ========================================
+# The functionality offered in these models are not
+# core to EF5 being able to run, but offer more utility
+
+# --- SNOW17 ---
+# Temperature index snow accumulation and ablation model.
+#[Snow17ParamSet MySnow17]
+#gauge=ClearCreek
+#uadj=0.184653
+#mbase=0.047224
+#mfmax=1.068658
+#mfmin=0.516059
+#tipm=0.911706
+#nmf=0.077336
+#plwhc=0.093812
+#scf=2.219492
+
+# --- SIMPLEINUNDATION ---
+# Simple threshold-based inundation mapping.
+# WARNING for "EF5 Dynamic Dockerization" users: 
+# The AHWALab fork renamed the Inundation Threshold parameter from th_inu to th_fim.
+# - Default (HyDROSLab Original): Inherits the stream network directly from the routing model 'th' parameter
+# - Active Fork (AHWALab): Uses 'th_fim' to allow the user to define a finer scale network for inundation mapping
+#[SimpleInundationParamSet MySimpleInundation]
+#gauge=USGS-08104900
+#alpha=3.12
+#beta=0.91
+#th_fim=...   # (option specific to AHWALab build)
+
+# ==============================================================================
+# TASK BLOCK
+# ==============================================================================
+# Defines what outputs EF5 should write to the disk.
+# Ensure output paths point to /results or /data/states.
+[Task MySim]
+style=simu                      #simu_rp: will produce standard dev, avg and skew coeff grids for estimating return period.
+model=MyCREST
+routing=MyKW
+basin=UpperSanGab
+precip=MyPrecip
+#temp=MyTemp                                     #Optional - If you are using Snow17
+pet=PETclimo
+ParamSet=MyCREST
+#snow_param_set=MySnow17                         #Optional - If you are using Snow17
+#inundation_param_set=MySimpleInundation.        #Optional - If you are using SimpleInundation
+#defaultparamsgauge=USGS-08104900                #Optional - Apply defined parameter values to all other gauges
+output=/results/                                 #Directory location for model output
+states=/data/states/                             #Directory location to output model states
+timestep=30u
+time_begin=YYYYMMDDHHUUSS
+time_warmend=YYYYMMDDHHUUSS                      #What time to you want to start writing output, given the need for warmup
+time_end=YYYYMMDDHHUUSS
+
+# (Optional) Grid options:
+# STREAMFLOW, SOILMOISTURE, MAXSTREAMFLOW, MAXSOILMOISTURE, PRECIP, PET,
+# using simu_rp style ~ RETURNPERIOD, MAXRETURNPERIOD
+# using snow17 ~ SNOWWATER, TEMPERATURE,
+# using simple inundation ~ INUNDATION
+# use either a "|" or a comma to separate your output grid options!
+output_grids=MAXUNITSTREAMFLOW|MAXSTREAMFLOW
+
+#da_file=      #directory location and file name of your combined streamflow observations if running Data Assimilation
+#co_file=      #directory location and file name for where the model should deposit combined time series output
+
+#Options if you are running a simu_rp
+#rp_stdgrid=/results/stdgrid.tif #File representing the standard dev for the Log-Pearson Type III return period distribution.
+#rp_avggrid=/results/avggrid.tif #File representing the average for the Log-Pearson Type III return period distribution.
+#rp_csgrid=/result/csgrid.tif #File representing the skew coeff for the Log-Pearson Type III return period distribution.
+
+# ==============================================================================
+# EXECUTE BLOCK
+# ==============================================================================
+# Defines the simulation time window and binds it to a Task.
+[Execute]
+task=MySim

@@ -34,24 +34,37 @@
   - [Docker Installation Troubleshooting](#docker-installation-troubleshooting)
   - [Windows Installation](#windows-installation)
   - [Windows Subsystem for Linux (WSL) Error](#windows-subsystem-for-linux-wsl-error)
+  - [Dynamic Dockerization Errors](#dynamic-dockerization-errors)
+    - [Build Fails During Compilation (`autoreconf` or `make` errors)](#build-fails-during-compilation-autoreconf-or-make-errors)
+    - [C++ Compiler Toolchain Incompatibilities](#c-compiler-toolchain-incompatibilities)
+    - [Silent Runtime Errors or Immediate Container Crash](#silent-runtime-errors-or-immediate-container-crash)
+    - [Git Clone Authentication Fails (Private Repositories)](#git-clone-authentication-fails-private-repositories)
 - [About EF5](#about-ef5)
   - [Learn More](#learn-more)
   - [Contributors](#contributors)
 
 ## General Information
 
-This project builds a single, minimal, Docker Linux image based on [Alpine Linux 3.17](https://hub.docker.com/_/alpine). When the image is built, it will install the needed dependencies to build EF5, then proceed to clone EF5's source code from the main [EF5 repository from GitHub](https://github.com/HyDROSLab/EF5), and finally it will compile the EF5 executable.  
+This project builds a single, minimal, Docker Linux image based on [Alpine Linux](https://hub.docker.com/_/alpine). When the image is built, it will install the needed dependencies to build EF5, then proceed to clone EF5's source code from the repo of the user's choosing (default options are provided), and finally it will compile the EF5 executable.  
 The EF5 installation will be placed in the path `/ef5` **WITHIN THE RUNNING CONTAINER** (*i.e. not directly accessible to the host machine*). It will also define the following *volumes* (_folders_) **WITHIN THE RUNNING CONTAINER**: `/conf`, `/data`, `/results`. These will serve as communication points (_mount points_) between the container and the host machine (the user's computer), to provide inputs to EF5 (parameters, data, and states), and to receive results (model outputs, and state outputs) from EF5's execution.
 
 When this image is used to run a container, it will mount the following project folders, and make them available to the running image:
 - **[./conf](./conf)** [RO]: where the running EF5 instance will look for a control file named [control.txt](./conf/control.txt) (*the control file __MUST__ be named `control.txt` for the default container configuration to work*). Further information regarding control files can be found in the [EF5 manual](./docs/manual.html). `This project folder will be mounted on the container using read-only permissions, since EF5 only needs to read the control file.`
 
-  > This project ships with a *skeleton* configuration file containing all the necessary configuration and tasks blocks, pre-mapped to the included example EF5 parameters, and precipitation in the project. **YOU WILL NEED TO PROVIDE YOUR OWN CONFIGURATIONS AND DATA TO RUN YOUR CUSTOM SIMULATIONS!**
+  > To support the Dynamic Dockerization workflow, this project ships with several template configuration files in the `./conf` directory. **YOU WILL NEED TO PROVIDE YOUR OWN CONFIGURATIONS AND DATA TO RUN YOUR CUSTOM SIMULATIONS!** To use them, copy the desired template, rename it to `control.txt` (as required by the container), and modify the parameters for your specific run:
+
+    * **`ef5_master_control.txt`**: The standard template for running a standard hydrologic simulation (`simu` mode). It includes exhaustive, pre-formatted blocks for all primary water balance models (CREST, SAC-SMA, HP), routing models (Kinematic Wave, Linear Reservoir), and optional modules like Snow17 and Simple Inundation.
+    *   **`control_calibration_template.txt`**: A specialized template for running model calibration (`CALI_DREAM` style). It is pre-configured to require observation gauges and automatically cache forcing data to accelerate the iterative calibration process.
+    *   **`control_clip_template.txt`**: A spatial processing template used to crop large, continental-scale input grids (DEM, DDM, FAM, and parameter grids) down to the exact bounding box of a specified watershed.
+    *   **`custom_sources_template.env`**: A template used to inject your own private or custom GitHub repository forks into the Docker build process. To use, copy this file to the main `EF5-dockerized` folder, rename it to `custom_sources.env`, and fill in your repository details.
+    *   **`control_KY.txt`**: a *skeleton* configuration file containing all the necessary configuration and tasks blocks, pre-mapped to the included example EF5 parameters, and precipitation in the other project folders!
 
 - **[./data](./data)** [RW]: where the running EF5 instance will look for data such as flow accumulation grids, digital elevation data, flow direction grids, kinematic wave parameter maps, and precipitation data. `This project folder will be mounted on the container using read-write permissions, since EF5 must be able to write outputs to the /data/states folder`
 - **[./results](./results/)** [RW]: where the running EF5 instance will write model results and state outputs, so that the user can retain a copy of these results on the host machine once the container finishes running EF5. `This project folder will be mounted on the container using read-write permissions, since EF5 must be able to write outputs to this folder.`
 
 > **NOTE**: This project ships with some basic parameters for running EF5 in the US domain. Some documentation on them is provided in the [EF5-US-Parameters.md](./docs/EF5-US-Parameters.md) file. These files were taken from the [EF5-US-Parameters](https://github.com/HyDROSLab/EF5-US-Parameters) repository on Github.
+
+
 
 # Docker
 
@@ -157,7 +170,26 @@ To build the EF5 container, use your file explorer to navigate to the project's 
 
 Double click on the *BATCH FILE* named [build_ef5_container.bat](./docker/build_ef5_container.bat) to start the build process. A command line window will open, and you will see some output showing the process as Docker builds the image:
 
-![Command Line - Docker Build](./docs/img/Windows/5a-Build_BatchScript2.PNG)
+Once the script starts, you will be prompted to select the source repository for EF5. The **Dynamic Dockerization** workflow allows you to choose between the original baseline, modern active forks, or injecting your own custom repository:
+
+```text
+======================================
+ Select EF5 Source Repository:
+======================================
+ 1) Default: HyDROSLab Original (master)
+ 2) Active Fork: AHWALab (master)
+ 3) Custom Injection (Loaded from .env)
+======================================
+Enter choice:
+```
+
+Select your desired option (e.g., type 1 and press Enter).
+
+>**NOTE**: Option 3 will only appear if you have copied the `custom_sources_template.env` file from the `/conf` directory into the main project directory and renamed it to `custom_sources.env`.
+
+After making your selection, you will see output showing the process as Docker builds the image. The script will automatically tag the resulting image with the repository name and branch (e.g., `ef5-hydroslab:master` or `ef5-ahwalab:master`) while retaining the `ef5-container:latest` alias for easy execution.
+
+![Command Line - Docker Build](./docs/img/Windows/5a-Build_BatchScript2.PNG) <!-- Replace this Image -->
 *Command Line - Docker Build*
 
 Assuming no errors are shown on the terminal window, and you see a prompt to *press any key*, the EF5 container image should have been built successfully. You can press any key, which will close the command line window once the building process is done.
@@ -278,9 +310,26 @@ Once there, execute the *BASH FILE* named [build_ef5_container.sh](./docker/buil
 [ef5-dockerized/docker]$> bash build_ef5_container.sh
 ```
 
-Once the process starts, you will see some output showing the process as Docker builds the image:
+Once the script starts, you will be prompted to select the source repository for EF5. The **Dynamic Dockerization** workflow allows you to choose between the original baseline, modern active forks, or injecting your own custom repository:
 
-![Command Line - Docker Build](./docs/img/Mac/5-Terminal_DockerBuild.png)
+```text
+======================================
+ Select EF5 Source Repository:
+======================================
+ 1) Default: HyDROSLab Original (master)
+ 2) Active Fork: AHWALab (master)
+ 3) Custom Injection (Loaded from .env)
+======================================
+Enter choice:
+```
+
+Select your desired option (e.g., type 1 and press Enter).
+
+>**NOTE**: Option 3 will only appear if you have copied the `custom_sources_template.env` file from the `/conf` directory into the main project directory and renamed it to `custom_sources.env`.
+
+After making your selection, you will see output showing the process as Docker builds the image. The script will automatically tag the resulting image with the repository name and branch (e.g., `ef5-hydroslab:master` or `ef5-ahwalab:master`) while retaining the `ef5-container:latest` alias for easy execution.
+
+![Command Line - Docker Build with Dynamic Prompt](./docs/img/Mac/5-Terminal_DockerBuild.png) <!-- Replace This Image -->
 *Command Line - Docker Build*
 
 Assuming no errors are shown on the terminal window, and you see a prompt to *press any key*, the EF5 container image should have been built successfully. You can press any key, which will close the command line window once the building process is done.
@@ -394,7 +443,26 @@ Once there, execute the *BASH FILE* named [build_ef5_container.sh](./docker/buil
 [ef5-dockerized/docker]$> bash build_ef5_container.sh
 ```
 
-![Building the EF5 Docker Image - Linux](./docs/img/Linux/1-Build_ShellScript.png)  
+Once the script starts, you will be prompted to select the source repository for EF5. The **Dynamic Dockerization** workflow allows you to choose between the original baseline, modern active forks, or injecting your own custom repository:
+
+```text
+======================================
+ Select EF5 Source Repository:
+======================================
+ 1) Default: HyDROSLab Original (master)
+ 2) Active Fork: AHWALab (master)
+ 3) Custom Injection (Loaded from .env)
+======================================
+Enter choice:
+```
+
+Select your desired option (e.g., type 1 and press Enter).
+
+>**NOTE**: Option 3 will only appear if you have copied the `custom_sources_template.env` file from the `/conf` directory into the main project directory and renamed it to `custom_sources.env`.
+
+After making your selection, you will see output showing the process as Docker builds the image. The script will automatically tag the resulting image with the repository name and branch (e.g., `ef5-hydroslab:master` or `ef5-ahwalab:master`) while retaining the `ef5-container:latest` alias for easy execution.
+
+![Building the EF5 Docker Image - Linux](./docs/img/Linux/1-Build_ShellScript.png)  <!-- Replace This Image -->
 *Building the EF5 Docker Image under Linux*
 
 Assuming no errors are shown on the terminal window, the EF5 container image should have been built successfully.
@@ -476,6 +544,63 @@ To install the WSL system, open a `command prompt` and enter the command `wsl --
 
 ![Docker - WSL Update](./docs/img/Windows/3b-WSLErrorUpdate2.PNG) 
 *Docker - WSL Update*
+
+## Dynamic Dockerization Errors
+
+When utilizing the custom source injection (Option 3) in the EF5 Dynamic Dockerization workflow, you may encounter build or execution errors depending on the specific fork or branch you are attempting to containerize.
+
+Below is an iterative flowchart of common problems, expected error messages, and how to modify your custom_sources.env or Dockerfile to resolve them.
+
+### Build Fails During Compilation (`autoreconf` or `make` errors)
+
+**Expected Error Messages:**
+- `autoreconf: command not found`
+- `make: *** No targets specified and no makefile found. Stop.`
+- `configure: error: cannot find install-sh, install.sh, or shtool`
+
+**Root Cause:** The EF5 Dynamic Dockerization build process strictly expects the traditional C/C++ automake sequence originally established by the HyDROSLab codebase: `autoreconf --force --install, ./configure`, and `make`. If your custom repository relies on a different build system (like CMake) or proprietary scripts, the default `Dockerfile` will fail.
+
+**Resolution Steps:**
+- Step A: Verify that your custom branch supports the standard `autoreconf` and `make` workflow.   
+- Step B: If your fork utilizes a custom shell script for compilation, you will need to modify the `Dockerfile` directly. For example, the AHWALab active fork introduced a `compile_ef5.sh` script with a `make clean` option. You would need to replace the `RUN autoreconf...` line in the `Dockerfile` with `RUN bash compile_ef5.sh` to match that specific repository's architecture.
+
+### C++ Compiler Toolchain Incompatibilities
+
+**Expected Error Messages:**
+- `error: '...' has not been declared`
+- `warning: deprecated conversion from string constant to 'char*'`
+- `fatal error: missing standard library headers`
+
+**Root Cause:** The EF5 application consists of roughly 90% C++ code. Older branches may fail to compile on newer GCC/G++ compilers, while newer active development branches might require modern C++ standards not found in older Linux distributions. By default, this project builds a minimal Docker Linux image based on Alpine Linux 3.17.
+
+**Resolution Steps:**
+- Step A: Open your `custom_sources.env` file.
+- Step B: Locate the `ALPINE_VERSION` variable.
+- Step C: Iteratively adjust the version. If building an older fork, try downgrading to an older Alpine release (e.g., `ALPINE_VERSION="3.15"`). If building a modern active fork, try upgrading (e.g., `ALPINE_VERSION="3.19"`), then re-run the `build_ef5_container` script.
+
+### Silent Runtime Errors or Immediate Container Crash
+
+**Expected Error Messages:**
+- None. The container runs, but immediately exits without writing to the `.\results` folder.
+- `ERROR: Invalid parameter found in control file.`
+
+**Root Cause:** Drifting parameter naming conventions between forks, or improperly named configuration files. The container is hardcoded to look specifically for a configuration file named `control.txt` within the read-only `.\conf` directory.
+
+**Resolution Steps:**
+- Step A: Ensure your control file is named exactly `control.txt`. The default container configuration will fail if it is named anything else.
+- Step B: Verify parameter syntax matches your selected codebase. For instance, if you injected the AHWALab fork, you must ensure your `control.txt` uses the `th_fim` threshold parameter, as they renamed it from the original th_inu.
+
+### Git Clone Authentication Fails (Private Repositories)
+
+**Expected Error Messages:**
+- `fatal: could not read Username for '[https://github.com](https://github.com)': No such device or address`
+
+**Root Cause:** You injected a private repository URL into `custom_sources.env`, but the Docker build environment does not have access to your local machine's Git credentials or SSH keys.
+
+**Resolution Steps:**
+- Step A: Generate a Personal Access Token (PAT) on GitHub.
+- Step B: Open your `custom_sources.env` file and modify the EF5_REPO_URL to securely include the token: `EF5_REPO_URL="https://<YOUR_TOKEN>@[github.com/YourOrg/EF5-private.git](https://github.com/YourOrg/EF5-private.git)"`
+- Step C: Run the build script again. *(Warning: Never commit your `custom_sources.env` file to version control if it contains a live access token!)*
 
 # About EF5
 EF5 was created by the Hydrometeorology and Remote Sensing Laboratory at the University of Oklahoma. The goal of EF5 is to have a framework for distributed hydrologic modeling that is user friendly, adaptable, expandable, all while being suitable for large scale (e.g. continental scale) modeling of flash floods with rapid forecast updates. Currently EF5 incorporates 3 water balance models including the Sacramento Soil Moisture Accounting Model (SAC-SMA), Coupled Routing and Excess Storage (CREST), and hydrophobic (HP). These water balance models can be coupled with either linear reservoir or kinematic wave routing. 

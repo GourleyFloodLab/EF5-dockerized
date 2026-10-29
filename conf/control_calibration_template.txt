@@ -1,0 +1,118 @@
+# ==============================================================================
+# EF5 MASTER CALIBRATION TEMPLATE CONTROL FILE
+# ==============================================================================
+# Designed for the "EF5 Dynamic Dockerization" workflow.
+# Rename this file to 'control.txt' and place it in the ./conf directory.
+# This template outlines the setup for a CALI_DREAM (calibration) execution.
+#
+# NOTE ON CALIBRATION:
+# Calibration requires running the model many times to optimize parameters. 
+# EF5 will automatically cache your precipitation and PET data into a binary 
+# file (e.g., califorcings.bin) on the first run to accelerate I/O.
+# ==============================================================================
+
+# ==============================================================================
+# BASIC BLOCK
+# ==============================================================================
+[Basic MyCali]
+DEM=/data/basic/your_DEM.tif
+DDM=/data/basic/your_DDM.tif
+FAM=/data/basic/your_FAM.tif
+PROJ=geographic
+ESRIDDM=true
+SELFFAM=false
+
+# ==============================================================================
+# PRECIP FORCING BLOCK
+# ==============================================================================
+[PrecipForcing MyPrecip]
+Type=BIF
+UNIT=mm/h
+FREQ=10u
+LOC=/data/precip/
+NAME=Q2_YYYYMMDDUU.bif
+
+# ==============================================================================
+# PET FORCING BLOCK
+# ==============================================================================
+[PETForcing PETclimo]
+LOC=/data/pet/
+FREQ=1m
+UNIT=mm/d
+NAME=PET_MM.tif
+TYPE=TIF
+
+# ==============================================================================
+# GAUGE BLOCK (CRITICAL FOR CALIBRATION)
+# ==============================================================================
+# For calibration tasks, the 'obs=' parameter is MANDATORY.
+# This must point to a CSV time series of observed streamflow for the model 
+# to calculate the objective function.
+[Gauge USGS-08104900]
+Lat=30.62575
+Lon=-97.69112
+obs=/data/observations/usgs/USGS-08104900.csv
+basinarea=344          # (Optional) Drainage area in km^2
+
+# ==============================================================================
+# BASIN BLOCK
+# ==============================================================================
+[Basin UpperSanGab]
+gauge=USGS-08104900
+
+# ==============================================================================
+# PARAMSET BLOCK
+# ==============================================================================
+# Provide the initial parameter guesses here. 
+# During calibration, EF5 will perturb these scalar values to optimize the 
+# model against your observed data. Gridded parameter distributions (e.g., 
+# wm_grid) can still be provided to serve as spatial multipliers.
+
+# --- WATER BALANCE: CREST ---
+[CrestParamSet MyCREST]
+gauge=USGS-08104900
+wm=1.0
+b=1.0
+im=0.01
+ke=1.0
+fc=1.00
+iwu=75.0
+
+# --- ROUTING: KW ---
+[KWParamSet MyKW]
+gauge=USGS-08104900
+alpha0=1.0
+alpha=1.0
+beta=1.0
+under=0.0001
+leaki=1.0
+th=10.0
+isu=00.0
+
+# ==============================================================================
+# TASK BLOCK (CALIBRATION SPECIFIC)
+# ==============================================================================
+# Defines the calibration execution.
+[Task CaliTask]
+style=CALI_DREAM                # Sets the task to perform a calibration run using the DREAM algorithm
+model=MyCREST
+routing=MyKW
+basin=UpperSanGab
+precip=MyPrecip
+pet=PETclimo
+ParamSet=MyCREST
+output=/results/calibration/    # Directory where calibrated parameter sets and objective scores are written
+timestep=30u
+time_begin=YYYYMMDDHHUUSS
+time_warmend=YYYYMMDDHHUUSS     
+time_end=YYYYMMDDHHUUSS
+
+# (Optional) Output grids. Both comma-separated and pipe-separated lists 
+# are typically supported depending on the EF5 build version.
+# output_grids=MAXUNITSTREAMFLOW|MAXSTREAMFLOW
+
+# ==============================================================================
+# EXECUTE BLOCK
+# ==============================================================================
+[Execute]
+task=CaliTask

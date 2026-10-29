@@ -1,0 +1,69 @@
+# ==============================================================================
+# EF5 MASTER CLIP BASIN TEMPLATE CONTROL FILE
+# ==============================================================================
+# Designed for the "EF5 Dynamic Dockerization" workflow.
+# Rename this file to 'control.txt' and place it in the ./conf directory so 
+# the Docker container can read it upon execution.
+#
+# NOTE ON CLIP_BASIN:
+# This task does not run a hydrologic simulation. Instead, it reads your 
+# continental or regional-scale grids, delineates the watershed above your 
+# defined gauge(s), and crops all grids to that specific basin. This is highly 
+# recommended to speed up computation times for local simulations!
+# ==============================================================================
+
+# ==============================================================================
+# BASIC BLOCK
+# ==============================================================================
+# Defines the large-scale core domain grids you want to clip.
+[Basic MyDomain]
+DEM=/data/basic/large_DEM.tif
+DDM=/data/basic/large_DDM.tif
+FAM=/data/basic/large_FAM.tif
+PROJ=geographic
+ESRIDDM=true
+SELFFAM=false
+
+# ==============================================================================
+# GAUGE BLOCK 
+# ==============================================================================
+# Defines the outlet point for your watershed delineation.
+[Gauge USGS-08104900]
+Lat=30.62575
+Lon=-97.69112
+
+# ==============================================================================
+# BASIN BLOCK
+# ==============================================================================
+# Groups the gauge into a basin for the clipping task.
+[Basin UpperSanGab]
+gauge=USGS-08104900
+
+# ==============================================================================
+# PARAMSET BLOCKS (OPTIONAL FOR CLIPPING)
+# ==============================================================================
+# If you also want to clip your gridded parameter files (e.g., wm_grid, 
+# alpha_grid), define those blocks here and link them in the Task block below. 
+# If you are only using scalar values (uniform parameters), you can omit these.
+
+# [CrestParamSet MyCREST]
+# gauge=USGS-08104900
+# wm_grid=/data/parameters/CREST/large_wm.tif
+# ...
+
+# ==============================================================================
+# TASK BLOCK (CLIP SPECIFIC)
+# ==============================================================================
+# Defines the clipping execution. Notice the absence of time and forcing variables.
+[Task ClipTask]
+style=clip_basin                # Tells EF5 to crop the grids instead of simulating
+basin=UpperSanGab
+# ParamSet=MyCREST              # Uncomment if you want to clip CREST parameter grids
+# routing=MyKW                  # Uncomment if you want to clip KW parameter grids
+output=/results/clipped_basin/  # Directory where the cropped .tif files will be saved
+
+# ==============================================================================
+# EXECUTE BLOCK
+# ==============================================================================
+[Execute]
+task=ClipTask

@@ -1,11 +1,16 @@
 ################################################################################
 #            EF5: ENSEMBLE FRAMEWORK FOR FLASH FLOOD FORECASTING
-#                          DOCKER IMPLEMENTATION
+#                   DYNAMIC DOCKERIZATION IMPLEMENTATION
 ################################################################################
 # Author: Jorge A. Duarte
 # Email: jduarte@ou.edu/jorge.duarte@noaa.gov
 # Version: 1.0
 # Date: Apr. 09, 2023
+#
+# Contribution: Kyle K. Hugeback
+# Email: Kyle.hugeback@ou.edu/kyle.hugeback@noaa.gov
+# Version: 2.0
+# Date: Oct. 27, 2026
 # ------------------------------------------------------------------------------
 # This Dockerfile builds one Docker image:
 # - 'ef5-container' image which will compile and host the EF5 installation,
@@ -20,48 +25,35 @@
 ################################################################################
 #                    BUILD ARGUMENTS & ENVIRONMENT VARIABLES
 ################################################################################
-# Use a minimal Alpine Linux base image from Dockerhub for our custom container
-# This Linux image is ideal, since it weights only 5MB!
-ARG DOCKER_BASE_OS="alpine:3.17"
+# Define the Alpine OS version as a build argument, defaulting to the verified baseline
+ARG ALPINE_VERSION=3.17
+FROM alpine:${ALPINE_VERSION}
 
-################################################################################
-#      BUILD A STANDARD ALPINE LINUX IMAGE FOR THE APPLICATION CONTAINER
-################################################################################
-FROM ${DOCKER_BASE_OS} as ef5-image
-LABEL nssl.wrdd.image.authors="jorge.duarte@noaa.gov"
+# Define build arguments for dynamic source selection, defaulting to the HyDROSLab baseline
+ARG EF5_REPO_URL=https://github.com/HyDROSLab/EF5.git
+ARG EF5_BRANCH=master
 
-# Define VOLUMES for Bind Mounts
-VOLUME [ "/conf" ]
-VOLUME [ "/data" ]
-VOLUME [ "/results" ]
+# Install universal software building tools and EF5 dependencies
+RUN apk update && apk add --no-cache \
+    git \
+    automake \
+    autoconf \
+    build-base \
+    libgeotiff-dev
 
-# Update the package index
-RUN apk update
+# Clone the selected repository into /ef5 and compile the application
+RUN git clone -b ${EF5_BRANCH} ${EF5_REPO_URL} /ef5 \
+    && cd /ef5 \
+    && autoreconf --force --install \
+    && ./configure \
+    && make
 
-# Install git, autoconf, automake, and 'build essentials' packages
-RUN apk add git
-RUN apk add automake
-RUN apk add autoconf
-RUN apk add build-base
+# Create communication mount points for the host machine
+RUN mkdir /conf /data /results
+VOLUME ["/conf", "/data", "/results"]
 
-# Install EF5 dependencies
-# LibGeoTIFF
-RUN apk add libgeotiff-dev
+# Set the working directory to the EF5 installation path
+WORKDIR /ef5
 
-
-# Set the EF5-DOCKERIZED folder as the working directory
-WORKDIR ../
-
-# Clone EF5 from GitHub onto the ef5 folder in the project root
-RUN git clone https://github.com/HyDROSLab/EF5.git ./ef5
-
-# Set the ef5 folder as the working directory
-WORKDIR ./ef5
-
-# Compile and install EF5
-RUN autoreconf --force --install
-RUN ./configure
-RUN make
-
-# Run ef5
-CMD ["/ef5/bin/ef5", "/conf/control.txt"]
+# Default execution command pointing to the required control file name
+CMD ["./ef5", "/conf/control.txt"]
