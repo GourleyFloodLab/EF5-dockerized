@@ -46,7 +46,8 @@ RUN git clone -b ${EF5_BRANCH} ${EF5_REPO_URL} /ef5 \
     && cd /ef5 \
     && autoreconf --force --install \
     && ./configure \
-    && make
+    && make \
+    && make install
 
 # Create communication mount points for the host machine
 RUN mkdir /conf /data /results
@@ -56,4 +57,4 @@ VOLUME ["/conf", "/data", "/results"]
 WORKDIR /ef5
 
 # Default execution command pointing to the required control file name
-CMD ["./ef5", "/conf/control.txt"]
+CMD ["ef5", "/conf/control.txt"]

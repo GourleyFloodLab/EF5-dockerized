@@ -38,7 +38,7 @@ case $choice in
         BRANCH="master"
         ALPINE_VERSION="3.17"
         echo ""
-        echo "WARNING: The AHWALab fork renamed the inundation parameter from 'th_inu' to 'th_fim'. Ensure your control.txt reflects this change to avoid silent runtime errors."
+        echo "WARNING: The AHWALab fork added an inundation parameter 'th_fim' to separate the term from the KW routing 'th'. Ensure your control.txt reflects this change to avoid silent runtime errors."
         echo ""
         sleep 2
         ;;
@@ -59,8 +59,8 @@ esac
 
 # Generate dynamic tag based on repository owner and branch
 # Extracts the 4th field from the URL (e.g., 'HyDROSLab' or 'AHWALab')
-ORG_NAME=$(echo "$REPO" | awk -F'/' '{print $4}')
-TAG_NAME="ef5-${ORG_NAME,,}:${BRANCH}"
+ORG_NAME=$(echo "$REPO" | awk -F'/' '{print $4}' | tr '[:upper:]' '[:lower:]')
+TAG_NAME="ef5-${ORG_NAME}:${BRANCH}"
 
 echo "Building Docker image: $TAG_NAME with Alpine $ALPINE_VERSION"
 

@@ -46,7 +46,7 @@ if "%choice%"=="2" (
     set ALPINE_VERSION=3.17
     set ORG_NAME=ahwalab
     echo.
-    echo WARNING: The AHWALab fork renamed the inundation parameter from 'th_inu' to 'th_fim'. Ensure your control.txt reflects this change to avoid silent runtime errors.
+    echo WARNING: The AHWALab fork added an inundation parameter 'th_fim' to separate the term from the KW routing 'th'. Ensure your control.txt reflects this change to avoid silent runtime errors.
     echo.
     :: Pause for 3 seconds so the user reads the warning
     timeout /t 3 >nul

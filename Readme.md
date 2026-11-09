@@ -72,7 +72,7 @@ When this image is used to run a container, it will mount the following project 
 
 Docker is required to build and deploy this version of EF5. You will need to install either Docker Desktop or Docker Engine, depending on the Operating System you are using.
 
->Even though [Docker Desktop has bee released for Linux](https://docs.docker.com/desktop/install/linux-install/), the present project **HAS NOT BEEN TESTED** using this kind of Docker installation. **If you are using Linux, please make sure to install and use the [Docker Engine](#docker-engine)**.
+>Even though [Docker Desktop has been released for Linux](https://docs.docker.com/desktop/install/linux-install/), the present project **HAS NOT BEEN TESTED** using this kind of Docker installation. **If you are using Linux, please make sure to install and use the [Docker Engine](#docker-engine)**.
 
 ## Installing Docker
 
@@ -187,9 +187,9 @@ Select your desired option (e.g., type 1 and press Enter).
 
 >**NOTE**: Option 3 will only appear if you have copied the `custom_sources_template.env` file from the `/conf` directory into the main project directory and renamed it to `custom_sources.env`.
 
-After making your selection, you will see output showing the process as Docker builds the image. The script will automatically tag the resulting image with the repository name and branch (e.g., `ef5-hydroslab:master` or `ef5-ahwalab:master`) while retaining the `ef5-container:latest` alias for easy execution.
+After making your selection, you will see output showing the process as Docker builds the image. The script will automatically tag the resulting image with the repository name and branch (e.g., `ef5-hydroslab:master` or `ef5-ahwalab:master`) while retaining the `ef5-container:latest` alias for easy execution. If you wish to switch from one source repository to another, remember that everytime to run the build script it will attach the active `ef5-container:latest` to the most recent build and that one will be the source chosen in the run script!
 
-![Command Line - Docker Build](./docs/img/Windows/5a-Build_BatchScript2.PNG) <!-- Replace this Image -->
+![Command Line - Docker Build with Dynamic Prompt - Windows](./docs/img/Windows/5a-Build_BatchScript2.PNG) <!-- Replace this Image -->
 *Command Line - Docker Build*
 
 Assuming no errors are shown on the terminal window, and you see a prompt to *press any key*, the EF5 container image should have been built successfully. You can press any key, which will close the command line window once the building process is done.
@@ -215,7 +215,7 @@ you should be able to use the script `.\run_ef5_container.bat` to execute your E
 To run the EF5 container, use your file explorer to navigate to the project's main folder. Once there, locate the [run_ef5_container.bat](./run_ef5_container.bat) script:
 
 ![Windows Explorer - Project directory](./docs/img/Windows/6-Run_BatchScript1.PNG)
-**Windows Explorer - Project directory
+*Windows Explorer - Project directory*
 
 >**NOTE**: Note that there are two different run scripts: a *BASH script* (ending in `.sh`, meant to be used on Linux and MacOS systems), and a a *BATCH script* (ending in `.bat`, meant to be used on Windows systems)
 
@@ -327,9 +327,9 @@ Select your desired option (e.g., type 1 and press Enter).
 
 >**NOTE**: Option 3 will only appear if you have copied the `custom_sources_template.env` file from the `/conf` directory into the main project directory and renamed it to `custom_sources.env`.
 
-After making your selection, you will see output showing the process as Docker builds the image. The script will automatically tag the resulting image with the repository name and branch (e.g., `ef5-hydroslab:master` or `ef5-ahwalab:master`) while retaining the `ef5-container:latest` alias for easy execution.
+After making your selection, you will see output showing the process as Docker builds the image. The script will automatically tag the resulting image with the repository name and branch (e.g., `ef5-hydroslab:master` or `ef5-ahwalab:master`) while retaining the `ef5-container:latest` alias for easy execution. If you wish to switch from one source repository to another, remember that everytime to run the build script it will attach the active `ef5-container:latest` to the most recent build and that one will be the source chosen in the run script!
 
-![Command Line - Docker Build with Dynamic Prompt](./docs/img/Mac/5-Terminal_DockerBuild.png) <!-- Replace This Image -->
+![Command Line - Docker Build with Dynamic Prompt - MacOS](./docs/img/Mac/5-Terminal_DockerBuild.png) <!-- Replace This Image -->
 *Command Line - Docker Build*
 
 Assuming no errors are shown on the terminal window, and you see a prompt to *press any key*, the EF5 container image should have been built successfully. You can press any key, which will close the command line window once the building process is done.
@@ -460,9 +460,9 @@ Select your desired option (e.g., type 1 and press Enter).
 
 >**NOTE**: Option 3 will only appear if you have copied the `custom_sources_template.env` file from the `/conf` directory into the main project directory and renamed it to `custom_sources.env`.
 
-After making your selection, you will see output showing the process as Docker builds the image. The script will automatically tag the resulting image with the repository name and branch (e.g., `ef5-hydroslab:master` or `ef5-ahwalab:master`) while retaining the `ef5-container:latest` alias for easy execution.
+After making your selection, you will see output showing the process as Docker builds the image. The script will automatically tag the resulting image with the repository name and branch (e.g., `ef5-hydroslab:master` or `ef5-ahwalab:master`) while retaining the `ef5-container:latest` alias for easy execution. If you wish to switch from one source repository to another, remember that everytime to run the build script it will attach the active `ef5-container:latest` to the most recent build and that one will be the source chosen in the run script!
 
-![Building the EF5 Docker Image - Linux](./docs/img/Linux/1-Build_ShellScript.png)  <!-- Replace This Image -->
+![Building the EF5 Docker with Dynamic Prompt - Linux](./docs/img/Linux/1-Build_ShellScript.png)  <!-- Replace This Image -->
 *Building the EF5 Docker Image under Linux*
 
 Assuming no errors are shown on the terminal window, the EF5 container image should have been built successfully.

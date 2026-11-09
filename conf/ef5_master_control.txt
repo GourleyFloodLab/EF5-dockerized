@@ -214,8 +214,7 @@ gauge=USGS-08104900
 
 # --- SIMPLEINUNDATION ---
 # Simple threshold-based inundation mapping.
-# WARNING for "EF5 Dynamic Dockerization" users: 
-# The AHWALab fork renamed the Inundation Threshold parameter from th_inu to th_fim.
+# WARNING for "EF5 Dynamic Dockerization" users:
 # - Default (HyDROSLab Original): Inherits the stream network directly from the routing model 'th' parameter
 # - Active Fork (AHWALab): Uses 'th_fim' to allow the user to define a finer scale network for inundation mapping
 #[SimpleInundationParamSet MySimpleInundation]
